@@ -1,4 +1,4 @@
-const { 
+const {
   app,
   Menu,
   Tray,
@@ -6,45 +6,62 @@ const {
   BrowserWindow,
   dialog
 } = require('electron');
+const { exec } = require('child_process');
+const { addBypassChecker } = require('electron-compile')
+const fs = require("fs");
 
 var AutoLaunch = require('auto-launch');
+var Tremol = require("./nodejs_tremol_loader").load([__dirname + "/directapi/fp_core.js", __dirname + "/directapi/fp.js"]);
 
 var autoLauncher = new AutoLaunch({
   name: "esd"
 });
 
-autoLauncher.isEnabled()
-.then(function(isEnabled){
-	if(isEnabled){
-	    return;
-	}
-	autoLauncher.enable();
-})
-.catch(function(err){
-    // handle error
+
+
+addBypassChecker((filePath) => {
+  return filePath.indexOf(app.getAppPath()) === -1;
 });
 
+autoLauncher.isEnabled()
+  .then(function (isEnabled) {
+    if (isEnabled) {
+      return;
+    }
+    autoLauncher.enable();
+  })
+  .catch(function (err) {
+    // handle error
+  });
+let process;
 const path = require('path');
-const { app: express, server} = require('./server')
+const { app: express, server } = require('./server')
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   // eslint-disable-line global-require
   app.quit();
 }
 
-// const createWindow = () => {
-//   // Create the browser window.
-//   const mainWindow = new BrowserWindow({
-//     width: 800,
-//     height: 600,
-//   });
+const createWindow = () => {
+  // Create the browser window.
+  const mainWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      webPreferences: {
+        preload: path.join(__dirname, 'functions.js'),
+      },
+    }
+  });
 
-//   // and load the index.html of the app.
-//   mainWindow.loadFile(path.join(__dirname, 'index.html'));
+  // and load the index.html of the app.
+  mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
-//   // Open the DevTools.
-//   mainWindow.webContents.openDevTools();
-// };
+  // Open the DevTools.
+  mainWindow.webContents.openDevTools();
+};
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -59,30 +76,40 @@ app.on('window-all-closed', () => {
   }
 });
 
+
+
 const createTray = () => {
   const iconPath = path.join(__dirname, "./icon/icon.png")
-  const trayIcon = nativeImage.createFromPath(iconPath).resize({width: 24, height: 24})
+  const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 24, height: 24 })
   const tray = new Tray(trayIcon)
   const menuTemplate = [
     {
       label: null,
-      enabled: false
+      enabled: false,
     },
     {
       label: 'Start Server',
       enabled: true,
       click: () => {
-        server.listen(express.get('Port'), express.get('Host'), () => {
+        server.listen(app.get('Port'), app.get('Host'), () => {
           menuTemplate[1].enabled = false
           menuTemplate[2].enabled = true
           buildTrayMenu(menuTemplate)
+          fs.readFile('./fp_core.js', 'utf8', function (err, data) {
+            if (err) {
+              return console.log(err);
+            }
+            console.log(data);
+          });
         })
-      }
+      },
+
     },
     {
       label: 'Stop Server',
       enabled: false,
       click: () => {
+
         server.close(e => {
           console.log('Connection Closed', e)
           menuTemplate[1].enabled = true
@@ -113,31 +140,35 @@ const createTray = () => {
   const buildTrayMenu = menu => {
     let lblStatus = "Inactive"
     let iconStatus = "./icon/stop.png"
-    if(!menu[1].enabled) {
+    if (!menu[1].enabled) {
       lblStatus = "Active"
       iconStatus = "./icon/start.png"
+
     }
 
     const iconStatusPath = path.join(__dirname, iconStatus)
 
     menu[0].label = `"Service Status " ${lblStatus}`
-    menu[0].icon = nativeImage.createFromPath(iconStatusPath).resize({ width: 24, height: 24})
+    menu[0].icon = nativeImage.createFromPath(iconStatusPath).resize({ width: 24, height: 24 })
 
     const trayMenu = Menu.buildFromTemplate(menu)
-    tray.setContextMenu(trayMenu)  
+    tray.setContextMenu(trayMenu)
   }
 
   buildTrayMenu(menuTemplate)
-
+  exec(`npm run start_total`);
   server.listen(express.get('Port'), express.get('Host'), () => {
+
     menuTemplate[1].enabled = false
     menuTemplate[2].enabled = true
     buildTrayMenu(menuTemplate)
+
   })
 
 }
 
-app.on('ready', createTray);
+
+app.once('ready', createTray)
 
 app.on('activate', () => {
   // On OS X it's common to re-create a window in the app when the
@@ -150,6 +181,6 @@ app.on('activate', () => {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
 
-app.on('quit', ()=> {
+app.on('quit', () => {
   server.close()
 })
