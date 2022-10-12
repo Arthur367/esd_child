@@ -115,16 +115,20 @@ const createTray = () => {
     shell:
       true
   });
-  menuTemplate[1].enabled = false
-  menuTemplate[2].enabled = true
-  buildTrayMenu(menuTemplate)
-  server.listen(express.get('Port'), express.get('Host'), () => {
 
+  server.listen(express.get('Port'), express.get('Host'), () => {
+    // menuTemplate[1].enabled = false
+    // menuTemplate[2].enabled = true
+    // buildTrayMenu(menuTemplate)
   })
 
 }
 
 app.on('ready', createTray);
+
+app.on("quit", () => {
+  kill(process.pid, 'SIGKILL');
+});
 
 app.on('activate', () => {
   // On OS X it's common to re-create a window in the app when the
