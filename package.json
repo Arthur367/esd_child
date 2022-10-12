@@ -6,6 +6,7 @@
   "main": "src/index.js",
   "scripts": {
     "start_process": "node src/child_server.js",
+    "dev": "electron .",
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",

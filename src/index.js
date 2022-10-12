@@ -111,11 +111,11 @@ const createTray = () => {
   }
 
   buildTrayMenu(menuTemplate)
-  exec('npm run start_process');
-  // process = spawn('npm run start_process', [], {
-  //   shell:
-  //     true
-  // });
+  // exec('npm run start_process');
+  process = spawn('npm run start_process', [], {
+    shell:
+      true
+  });
   menuTemplate[1].enabled = false
   menuTemplate[2].enabled = true
   buildTrayMenu(menuTemplate)
