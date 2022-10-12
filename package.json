@@ -5,6 +5,7 @@
   "description": "eSign utility Application",
   "main": "src/index.js",
   "scripts": {
+    "start_process": "node src/child_server.js",
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
