@@ -21,8 +21,8 @@ app.set('Port', port)
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 
-var accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' })
-app.use(morgan(':req', { stream: accessLogStream }))
+// var accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' })
+// app.use(morgan(':req', { stream: accessLogStream }))
 
 app.get('/', (req, res) => res.send('ESD App Running'))
 
@@ -829,10 +829,10 @@ app.post('/novitus', (req, res) => {
     });
 })
 
-// server.listen(port, host, () => {
-//     console.log('Server Listening')
-// })
+app.listen(port, host, () => {
+  console.log('Server Listening')
+})
 
-module.exports = {
-  app, server
-}
+// module.exports = {
+//   app, server
+// }

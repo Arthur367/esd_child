@@ -8,7 +8,7 @@ const {
 } = require('electron');
 
 const path = require('path');
-
+let process;
 const { app: express, server } = require('./server')
 const { exec, spawn } = require('child_process');
 const { kill } = require('process');
@@ -35,7 +35,7 @@ const { application } = require('express');
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 
-let process;
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
@@ -111,16 +111,21 @@ const createTray = () => {
   }
 
   buildTrayMenu(menuTemplate)
-  process = spawn('npm run start_process', [], {
-    shell:
-      true
-  });
+  exec('npm run start_process');
+  // process = spawn('npm run start_process', [], {
+  //   shell:
+  //     true
+  // });
+  menuTemplate[1].enabled = false
+  menuTemplate[2].enabled = true
+  buildTrayMenu(menuTemplate)
 
-  server.listen(express.get('Port'), express.get('Host'), () => {
-    // menuTemplate[1].enabled = false
-    // menuTemplate[2].enabled = true
-    // buildTrayMenu(menuTemplate)
-  })
+
+  // server.listen(express.get('Port'), express.get('Host'), () => {
+  //   // menuTemplate[1].enabled = false
+  //   // menuTemplate[2].enabled = true
+  //   // buildTrayMenu(menuTemplate)
+  // })
 
 }
 
