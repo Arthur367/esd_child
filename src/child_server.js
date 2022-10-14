@@ -537,60 +537,44 @@ app.post('/datecs', (req, res) => {
 //total_4444 file loader
 app.post('/total', (req, res) => {
 
-  // payload = req.body
-  // fp.ServerSetSettings("http://localhost:4444/");
-  // console.log(fp.ServerSetDeviceTcpSettings("196.207.27.42", 8000, "Password"))
-
-  // fp.ServerSetDeviceTcpSettings("196.207.19.131", 8000, "Password");
-  // if (device) {
-  //   fp.ServerSetDeviceSerialSettings(device.serialPort, device.baudRate, false); //If FD is connected on serial port or USB
-  //   fp.PrintDiagnostics();
-  // } else {
-  //   console.log("Device not found")
-  // }
   payload = req.body
-  print_host = req.headers.hostname;
-  // printer_ip = req.headers.printerip + ':' + req.headers.printerport;
+  items = payload.items_list
+  while (true) {
+    // fp.ServerSetSettings(payload.original);
+    // fp.ServerSetDeviceTcpSettings(payload.hostname, payload.port, payload.password);
 
-  fp.ServerSetSettings("http://localhost:4444/");
-  fp.ServerSetDeviceTcpSettings("196.207.19.131", 8000, "Password");
-  console.log(fp.ServerSetDeviceTcpSettings("196.207.19.131", 8000, "Password"))
-  // fp.ServerSetSettings(print_host);
-  // fp.ServerSetDeviceTcpSettings(req.headers.printerip, req.headers.printerport, req.headers.senderid);
-  var device = fp.ServerFindDevice();
-
-  if (device) {
-    fp.ServerSetDeviceSerialSettings(device.serialPort, device.baudRate, false); //If FD is connected on serial port or USB
-    fp.PrintDiagnostics();
-  }
-  else {
-    let error = {
-      "error_status": "Device Not Found"
+    fp.ServerSetSettings("http://localhost:4444/");
+    fp.ServerSetDeviceTcpSettings("196.207.19.131", 8000, "Password");
+    var device = fp.ServerFindDevice();
+    if (device) {
+      fp.ServerSetDeviceSerialSettings(device.serialPort, device.baudRate, false); //If FD is connected on serial port or USB
+      fp.PrintDiagnostics();
     }
-
-    // res.setHeader('Content-Type', 'application/json');
-    // res.send(error);
-  }
-
-  const status = fp.ReadStatus()
-  if (status) {
+    else {
+      console.log("Device not found");
+    }
     try {
-      fp.OpenInvoiceWithFreeCustomerData("", payload.customer_pin, "", "", "", "", "", "")
-      for (const val of payload.item_list) {
-        let hscode = val.hscode ? val.hscode : ""
-        fp.SellPLUfromExtDB(val.stockitemname, val.taxrateclass, val.rate, " ", hscode, " ", val.taxrate, val.qty, 0);
-      }
-      res.send({ "msg": "yess" })
+      const status = fp.ReadStatus()
+      if (status) {
+        fp.OpenInvoiceWithFreeCustomerData("", payload.customer_pin, "", "", "", "", "", "")
+        for (const val of items) {
+          let hscode = val.hscode ? val.hscode : " "
 
-    } catch (e) {
-      let error = {
-        "error_status": String(e)
+          fp.SellPLUfromExtDB(val.stockitemname, Tremol.Enums.OptionVATClass.VAT_Class_A, val.rate, " ", hscode, " ", 16, val.qty, 0);
+          console.log(val.stockitemname, Tremol.Enums.OptionVATClass.VAT_Class_A, val.rate, " ", hscode, " ", 16, val.qty, 0);
+        }
+        const close = fp.CloseReceipt()
+        const dateTime = fp.ReadDateTime()
+        console.log(close, dateTime)
+        var response = { close, dateTime }
+        res.json(response)
+        break;
       }
-      res.setHeader('Content-Type', 'application/json');
-      res.send(error);
     }
-    const close = fp.CloseReceipt()
-    res.json(close)
+    catch (error) {
+      console.log(error);
+
+    }
   }
 }
 
